@@ -9,7 +9,7 @@ type Trabajador = {
   nombre_completo: string;
   cedula: string | null;
   cargo: string | null;
-  salario_diario: number | null;
+  salario_diario_usd: number | null;
   telefono: string | null;
   fecha_ingreso: string | null;
   estado: 'activo' | 'inactivo';
@@ -48,9 +48,9 @@ function formatBs(valor: number) {
   return valor.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function bsAUsd(bs: number, tasa: TasaBCV | null): string | null {
+function usdABs(usd: number, tasa: TasaBCV | null): string | null {
   if (!tasa || !tasa.usd) return null;
-  return (bs / tasa.usd).toFixed(2);
+  return formatBs(usd * tasa.usd);
 }
 
 export default function TrabajadoresPage() {
@@ -66,7 +66,7 @@ export default function TrabajadoresPage() {
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [cedula, setCedula] = useState('');
   const [cargo, setCargo] = useState('');
-  const [salarioDiario, setSalarioDiario] = useState('');
+  const [salarioDiarioUsd, setSalarioDiarioUsd] = useState('');
   const [telefono, setTelefono] = useState('');
   const [fechaIngreso, setFechaIngreso] = useState(hoy());
   const [estado, setEstado] = useState<'activo' | 'inactivo'>('activo');
@@ -92,7 +92,7 @@ export default function TrabajadoresPage() {
     setNombreCompleto('');
     setCedula('');
     setCargo('');
-    setSalarioDiario('');
+    setSalarioDiarioUsd('');
     setTelefono('');
     setFechaIngreso(hoy());
     setEstado('activo');
@@ -106,7 +106,7 @@ export default function TrabajadoresPage() {
     setNombreCompleto(t.nombre_completo);
     setCedula(t.cedula ?? '');
     setCargo(t.cargo ?? '');
-    setSalarioDiario(t.salario_diario?.toString() ?? '');
+    setSalarioDiarioUsd(t.salario_diario_usd?.toString() ?? '');
     setTelefono(t.telefono ?? '');
     setFechaIngreso(t.fecha_ingreso ?? hoy());
     setEstado(t.estado);
@@ -124,7 +124,7 @@ export default function TrabajadoresPage() {
       nombre_completo: nombreCompleto,
       cedula: cedula || null,
       cargo: cargo || null,
-      salario_diario: salarioDiario ? parseFloat(salarioDiario) : null,
+      salario_diario_usd: salarioDiarioUsd ? parseFloat(salarioDiarioUsd) : null,
       telefono: telefono || null,
       fecha_ingreso: fechaIngreso || null,
       estado,
@@ -146,7 +146,7 @@ export default function TrabajadoresPage() {
     cargarTrabajadores();
   }
 
-  const previewUsd = salarioDiario ? bsAUsd(parseFloat(salarioDiario), tasa) : null;
+  const previewBs = salarioDiarioUsd ? usdABs(parseFloat(salarioDiarioUsd), tasa) : null;
 
   return (
     <div>
@@ -180,7 +180,7 @@ export default function TrabajadoresPage() {
             Tasa BCV hoy: Bs {formatBs(tasa.usd)} por $1 <span style={{ color: '#94a3b8', fontWeight: 400 }}>({tasa.fecha})</span>
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>No se pudo obtener la tasa BCV hoy — mostrando solo bolívares.</span>
+          <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>No se pudo obtener la tasa BCV hoy — mostrando solo dólares.</span>
         )}
       </div>
 
@@ -200,7 +200,7 @@ export default function TrabajadoresPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
           {trabajadores.map((t) => {
             const estadoInfo = ESTADO_LABELS[t.estado];
-            const usd = t.salario_diario != null ? bsAUsd(t.salario_diario, tasa) : null;
+            const bs = t.salario_diario_usd != null ? usdABs(t.salario_diario_usd, tasa) : null;
             return (
               <div
                 key={t.id}
@@ -221,10 +221,10 @@ export default function TrabajadoresPage() {
                 </div>
                 {t.cargo && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>{t.cargo}</p>}
                 {t.cedula && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>Cédula: {t.cedula}</p>}
-                {t.salario_diario != null && (
-                  <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>
-                    Bs {formatBs(t.salario_diario)} / día
-                    {usd && <span style={{ color: '#E8C77E', fontWeight: 600 }}> · ≈ ${usd}</span>}
+                {t.salario_diario_usd != null && (
+                  <p style={{ margin: '0.2rem 0' }}>
+                    <span style={{ color: '#E8C77E', fontWeight: 700 }}>${t.salario_diario_usd.toFixed(2)} / día</span>
+                    {bs && <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}> · ≈ Bs {bs}</span>}
                   </p>
                 )}
                 {t.telefono && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>{t.telefono}</p>}
@@ -270,10 +270,10 @@ export default function TrabajadoresPage() {
               <input value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ej: Cortador, Capataz" style={inputStyle} />
             </Campo>
 
-            <Campo label="Salario diario (Bs)">
-              <input type="number" step="0.01" min="0" value={salarioDiario} onChange={(e) => setSalarioDiario(e.target.value)} style={inputStyle} />
-              {previewUsd && (
-                <span style={{ color: '#E8C77E', fontSize: '0.8rem' }}>≈ ${previewUsd} a la tasa de hoy</span>
+            <Campo label="Salario diario ($)">
+              <input type="number" step="0.01" min="0" value={salarioDiarioUsd} onChange={(e) => setSalarioDiarioUsd(e.target.value)} style={inputStyle} />
+              {previewBs && (
+                <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>≈ Bs {previewBs} a la tasa de hoy</span>
               )}
             </Campo>
 
