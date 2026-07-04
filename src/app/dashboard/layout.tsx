@@ -40,6 +40,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard', label: 'Resumen' },
     { href: '/dashboard/lotes', label: 'Lotes' },
     { href: '/dashboard/trabajadores', label: 'Trabajadores' },
+    { href: '/dashboard/asistencia', label: 'Asistencia' },
+    { href: '/dashboard/inventario', label: 'Inventario' },
+    { href: '/dashboard/nomina', label: 'Nómina' },
   ];
 
   return (
@@ -69,7 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <span style={{ color: '#F3ECDD', fontSize: '1.25rem', fontWeight: 700 }}>Caña ERP</span>
-          <nav style={{ display: 'flex', gap: '1.25rem' }}>
+          <nav style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
             {navItems.map((item) => (
               <div
                 key={item.href}
