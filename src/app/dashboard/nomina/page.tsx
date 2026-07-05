@@ -81,6 +81,8 @@ export default function NominaPage() {
 
   const [historial, setHistorial] = useState<NominaGuardada[]>([]);
   const [historialLoading, setHistorialLoading] = useState(true);
+  const [pagoError, setPagoError] = useState('');
+  const [pagando, setPagando] = useState<string | null>(null);
 
   useEffect(() => {
     getTasaBCV().then(setTasa);
@@ -176,7 +178,35 @@ export default function NominaPage() {
   }
 
   async function marcarPagado(registro: NominaGuardada) {
-    await supabase.from('nomina').update({ estado: 'pagado', fecha_pago: new Date().toISOString().slice(0, 10) }).eq('id', registro.id);
+    setPagoError('');
+    setPagando(registro.id);
+
+    const { error: gastoError } = await supabase.from('gastos').insert({
+      categoria: 'sueldos',
+      descripcion: `Nómina: ${registro.trabajadores?.nombre_completo ?? 'Trabajador'} (${registro.periodo_inicio} → ${registro.periodo_fin})`,
+      monto_usd: registro.total_pagar,
+      fecha: new Date().toISOString().slice(0, 10),
+      nomina_id: registro.id,
+    });
+
+    if (gastoError) {
+      setPagando(null);
+      setPagoError(`No se pudo registrar el gasto correspondiente: ${gastoError.message}`);
+      return;
+    }
+
+    const { error: nominaError } = await supabase
+      .from('nomina')
+      .update({ estado: 'pagado', fecha_pago: new Date().toISOString().slice(0, 10) })
+      .eq('id', registro.id);
+
+    setPagando(null);
+
+    if (nominaError) {
+      setPagoError(`El gasto se registró, pero hubo un error marcando la nómina como pagada: ${nominaError.message}`);
+      return;
+    }
+
     cargarHistorial();
   }
 
@@ -274,7 +304,8 @@ export default function NominaPage() {
         )}
       </div>
 
-      <h2 style={{ color: '#F3ECDD', fontSize: '1.3rem', marginBottom: '1rem' }}>Historial de nóminas</h2>
+      <h2 style={{ color: '#F3ECDD', fontSize: '1.3rem', marginBottom: '0.5rem' }}>Historial de nóminas</h2>
+      {pagoError && <p style={{ color: '#F5A3A3', fontSize: '0.85rem', marginBottom: '1rem' }}>{pagoError}</p>}
       {historialLoading ? (
         <p style={{ color: '#94a3b8' }}>Cargando...</p>
       ) : historial.length === 0 ? (
@@ -314,9 +345,10 @@ export default function NominaPage() {
                 ) : (
                   <button
                     onClick={() => marcarPagado(n)}
-                    style={{ padding: '0.4rem 0.9rem', borderRadius: '999px', border: '1px solid #E8C77E', backgroundColor: 'transparent', color: '#E8C77E', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                    disabled={pagando === n.id}
+                    style={{ padding: '0.4rem 0.9rem', borderRadius: '999px', border: '1px solid #E8C77E', backgroundColor: 'transparent', color: '#E8C77E', fontSize: '0.78rem', fontWeight: 700, cursor: pagando === n.id ? 'not-allowed' : 'pointer', opacity: pagando === n.id ? 0.6 : 1 }}
                   >
-                    Marcar pagado
+                    {pagando === n.id ? 'Registrando...' : 'Marcar pagado'}
                   </button>
                 )}
               </div>
