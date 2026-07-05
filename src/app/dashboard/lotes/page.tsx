@@ -108,9 +108,8 @@ export default function LotesPage() {
 
     setSaving(false);
 
-  if (error) {
-      console.error('Error real de Supabase:', error);
-      setError(`Error real: ${error.message}`);
+    if (error) {
+      setError(error.message.includes('duplicate') ? 'Ese código ya está en uso por otro tablón.' : 'Ocurrió un error al guardar.');
       return;
     }
 
@@ -122,8 +121,8 @@ export default function LotesPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ color: '#F3ECDD', fontSize: '1.75rem', margin: 0 }}>Lotes</h1>
-          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Los terrenos de la hacienda, uno por parcela.</p>
+          <h1 style={{ color: '#F3ECDD', fontSize: '1.75rem', margin: 0 }}>Tablones</h1>
+          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Los tablones de la hacienda, uno por parcela.</p>
         </div>
         <button
           onClick={abrirNuevo}
@@ -138,15 +137,15 @@ export default function LotesPage() {
             cursor: 'pointer',
           }}
         >
-          + Nuevo lote
+          + Nuevo tablón
         </button>
       </div>
 
       {loading ? (
-        <p style={{ color: '#94a3b8' }}>Cargando lotes...</p>
+        <p style={{ color: '#94a3b8' }}>Cargando tablones...</p>
       ) : lotes.length === 0 ? (
         <div style={{ backgroundColor: '#1F3326', border: '1px dashed rgba(232,199,126,0.3)', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
-          <p style={{ color: '#D8CBB0', marginBottom: '1rem' }}>Todavía no has registrado ningún lote.</p>
+          <p style={{ color: '#D8CBB0', marginBottom: '1rem' }}>Todavía no has registrado ningún tablón.</p>
           <button
             onClick={abrirNuevo}
             style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid #E8C77E', backgroundColor: 'transparent', color: '#E8C77E', cursor: 'pointer', fontWeight: 600 }}
@@ -207,7 +206,7 @@ export default function LotesPage() {
               overflowY: 'auto',
             }}
           >
-            <h2 style={{ color: '#F3ECDD', fontSize: '1.3rem', margin: 0 }}>{editing ? 'Editar lote' : 'Nuevo lote'}</h2>
+            <h2 style={{ color: '#F3ECDD', fontSize: '1.3rem', margin: 0 }}>{editing ? 'Editar tablón' : 'Nuevo tablón'}</h2>
 
             <Campo label="Nombre">
               <input required value={nombre} onChange={(e) => setNombre(e.target.value)} style={inputStyle} />

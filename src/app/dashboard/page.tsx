@@ -177,7 +177,7 @@ export default function DashboardPage() {
         </div>
 
         <div onClick={() => router.push('/dashboard/lotes')} style={cardStyle}>
-          <p style={labelStyle}>Lotes</p>
+          <p style={labelStyle}>Tablones</p>
           <p style={{ color: '#F3ECDD', fontSize: '2rem', fontWeight: 700, margin: 0 }}>{data.lotesTotal}</p>
           <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.4rem' }}>
             {data.lotesActivos} activo(s){data.lotesEnCosecha > 0 && ` · ${data.lotesEnCosecha} en cosecha`}

@@ -410,9 +410,9 @@ export default function InventarioPage() {
             </Campo>
 
             {movTipo === 'salida' && (
-              <Campo label="Lote destino (opcional)">
+              <Campo label="Tablón destino (opcional)">
                 <select value={movLote} onChange={(e) => setMovLote(e.target.value)} style={inputStyle}>
-                  <option value="">Sin lote específico</option>
+                  <option value="">Sin tablón específico</option>
                   {lotes.map((l) => (
                     <option key={l.id} value={l.id}>{l.nombre}</option>
                   ))}
@@ -497,7 +497,7 @@ export default function InventarioPage() {
                       <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{m.fecha}</span>
                     </div>
                     <p style={{ color: '#D8CBB0', fontSize: '0.8rem', margin: '0.3rem 0 0' }}>
-                      {m.lotes?.nombre && <>Lote: {m.lotes.nombre} · </>}
+                      {m.lotes?.nombre && <>Tablón: {m.lotes.nombre} · </>}
                       {m.proveedor && <>Proveedor: {m.proveedor} · </>}
                       {m.responsable && <>Responsable: {m.responsable}</>}
                     </p>

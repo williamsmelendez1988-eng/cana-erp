@@ -266,7 +266,7 @@ export default function GastosPage() {
               <input type="number" step="0.01" min="0" required value={montoUsd} onChange={(e) => setMontoUsd(e.target.value)} style={inputStyle} />
             </Campo>
 
-            <Campo label="Lote relacionado (opcional)">
+            <Campo label="Tablón relacionado (opcional)">
               <select value={loteId} onChange={(e) => setLoteId(e.target.value)} style={inputStyle}>
                 <option value="">Gasto general de la hacienda</option>
                 {lotes.map((l) => (

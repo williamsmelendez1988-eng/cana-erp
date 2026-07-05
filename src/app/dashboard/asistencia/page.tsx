@@ -116,7 +116,7 @@ export default function AsistenciaPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ color: '#F3ECDD', fontSize: '1.75rem', margin: 0 }}>Asistencia</h1>
-          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Marca quién trabajó hoy y en qué lote.</p>
+          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Marca quién trabajó hoy y en qué tablón.</p>
         </div>
         <input
           type="date"
@@ -199,7 +199,7 @@ export default function AsistenciaPage() {
                       fontSize: '0.85rem',
                     }}
                   >
-                    <option value="">Otro trabajo (sin lote)</option>
+                    <option value="">Otro trabajo (sin tablón)</option>
                     {lotes.map((l) => (
                       <option key={l.id} value={l.id}>{l.nombre}</option>
                     ))}
