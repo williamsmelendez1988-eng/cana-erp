@@ -10,6 +10,10 @@ type Lote = {
   area_hectareas: number | null;
   estado: 'activo' | 'en_cosecha' | 'inactivo';
   fecha_siembra: string | null;
+  variedad: string | null;
+  tipo_ciclo: string | null;
+  numero_soca: number | null;
+  fecha_ultimo_corte: string | null;
   notas: string | null;
 };
 
@@ -38,6 +42,12 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function labelCiclo(lote: Lote): string | null {
+  if (!lote.tipo_ciclo) return null;
+  if (lote.tipo_ciclo === 'planta') return 'Caña planta';
+  return `Soca ${lote.numero_soca ?? '?'}`;
+}
+
 export default function LotesPage() {
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +61,10 @@ export default function LotesPage() {
   const [areaHectareas, setAreaHectareas] = useState('');
   const [estado, setEstado] = useState<'activo' | 'en_cosecha' | 'inactivo'>('activo');
   const [fechaSiembra, setFechaSiembra] = useState('');
+  const [variedad, setVariedad] = useState('');
+  const [tipoCiclo, setTipoCiclo] = useState<'planta' | 'soca'>('planta');
+  const [numeroSoca, setNumeroSoca] = useState('');
+  const [fechaUltimoCorte, setFechaUltimoCorte] = useState('');
   const [notas, setNotas] = useState('');
 
   useEffect(() => {
@@ -71,6 +85,10 @@ export default function LotesPage() {
     setAreaHectareas('');
     setEstado('activo');
     setFechaSiembra('');
+    setVariedad('');
+    setTipoCiclo('planta');
+    setNumeroSoca('');
+    setFechaUltimoCorte('');
     setNotas('');
     setError('');
     setModalOpen(true);
@@ -83,6 +101,10 @@ export default function LotesPage() {
     setAreaHectareas(lote.area_hectareas?.toString() ?? '');
     setEstado(lote.estado);
     setFechaSiembra(lote.fecha_siembra ?? '');
+    setVariedad(lote.variedad ?? '');
+    setTipoCiclo((lote.tipo_ciclo as 'planta' | 'soca') ?? 'planta');
+    setNumeroSoca(lote.numero_soca?.toString() ?? '');
+    setFechaUltimoCorte(lote.fecha_ultimo_corte ?? '');
     setNotas(lote.notas ?? '');
     setError('');
     setModalOpen(true);
@@ -99,6 +121,10 @@ export default function LotesPage() {
       area_hectareas: areaHectareas ? parseFloat(areaHectareas) : null,
       estado,
       fecha_siembra: fechaSiembra || null,
+      variedad: variedad || null,
+      tipo_ciclo: tipoCiclo,
+      numero_soca: tipoCiclo === 'soca' && numeroSoca ? parseInt(numeroSoca, 10) : null,
+      fecha_ultimo_corte: fechaUltimoCorte || null,
       notas: notas || null,
     };
 
@@ -157,6 +183,7 @@ export default function LotesPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
           {lotes.map((lote) => {
             const estadoInfo = ESTADO_LABELS[lote.estado];
+            const ciclo = labelCiclo(lote);
             return (
               <div
                 key={lote.id}
@@ -175,9 +202,11 @@ export default function LotesPage() {
                     {estadoInfo.label}
                   </span>
                 </div>
+                {lote.variedad && <p style={{ color: '#E8C77E', fontSize: '0.85rem', margin: '0.2rem 0', fontWeight: 600 }}>{lote.variedad}</p>}
+                {ciclo && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>{ciclo}</p>}
                 {lote.codigo && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>Código: {lote.codigo}</p>}
                 {lote.area_hectareas != null && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>{lote.area_hectareas} hectáreas</p>}
-                {lote.fecha_siembra && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>Sembrado: {lote.fecha_siembra}</p>}
+                {lote.fecha_ultimo_corte && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>Último corte: {lote.fecha_ultimo_corte}</p>}
               </div>
             );
           })}
@@ -216,6 +245,31 @@ export default function LotesPage() {
               <input value={codigo} onChange={(e) => setCodigo(e.target.value)} style={inputStyle} />
             </Campo>
 
+            <Campo label="Variedad de caña">
+              <input value={variedad} onChange={(e) => setVariedad(e.target.value)} placeholder="Ej: PR 61-632, V 71-51" style={inputStyle} />
+            </Campo>
+
+            <Campo label="Ciclo">
+              <select value={tipoCiclo} onChange={(e) => setTipoCiclo(e.target.value as 'planta' | 'soca')} style={inputStyle}>
+                <option value="planta">Caña planta</option>
+                <option value="soca">Soca</option>
+              </select>
+            </Campo>
+
+            {tipoCiclo === 'soca' && (
+              <Campo label="Número de soca">
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={numeroSoca}
+                  onChange={(e) => setNumeroSoca(e.target.value)}
+                  placeholder="Ej: 1, 2, 7, 14..."
+                  style={inputStyle}
+                />
+              </Campo>
+            )}
+
             <Campo label="Área (hectáreas)">
               <input type="number" step="0.01" min="0" value={areaHectareas} onChange={(e) => setAreaHectareas(e.target.value)} style={inputStyle} />
             </Campo>
@@ -230,6 +284,10 @@ export default function LotesPage() {
 
             <Campo label="Fecha de siembra">
               <input type="date" value={fechaSiembra} onChange={(e) => setFechaSiembra(e.target.value)} style={inputStyle} />
+            </Campo>
+
+            <Campo label="Fecha del último corte">
+              <input type="date" value={fechaUltimoCorte} onChange={(e) => setFechaUltimoCorte(e.target.value)} style={inputStyle} />
             </Campo>
 
             <Campo label="Notas">
