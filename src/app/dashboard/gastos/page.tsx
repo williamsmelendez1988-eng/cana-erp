@@ -18,6 +18,7 @@ type Gasto = {
 
 const CATEGORIA_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   sueldos: { label: 'Sueldos', color: '#E8C77E', bg: 'rgba(232,199,126,0.15)' },
+  mano_obra_contratada: { label: 'Mano de obra contratada', color: '#FB923C', bg: 'rgba(251,146,60,0.15)' },
   combustible: { label: 'Combustible', color: '#F87171', bg: 'rgba(248,113,113,0.12)' },
   electricidad: { label: 'Electricidad', color: '#93C5FD', bg: 'rgba(147,197,253,0.12)' },
   repuestos: { label: 'Repuestos', color: '#C4B5FD', bg: 'rgba(196,181,253,0.12)' },

@@ -28,8 +28,11 @@ type MovimientoConLote = {
 const CATEGORIA_LABELS: Record<string, string> = {
   fertilizante: 'Fertilizante',
   herbicida: 'Herbicida',
+  insecticida: 'Insecticida',
   combustible: 'Combustible',
   herramienta: 'Herramienta',
+  implemento: 'Implemento de tractor',
+  equipo_proteccion: 'Equipo de protección',
   repuesto: 'Repuesto',
   semilla: 'Semilla',
   material: 'Material',
