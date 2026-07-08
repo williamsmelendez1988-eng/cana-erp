@@ -45,6 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/inventario', label: 'Inventario' },
     { href: '/dashboard/nomina', label: 'Nómina' },
     { href: '/dashboard/gastos', label: 'Gastos' },
+    { href: '/dashboard/clima', label: 'Clima' },
     { href: '/dashboard/hacienda', label: 'Mi Hacienda' },
   ];
 
