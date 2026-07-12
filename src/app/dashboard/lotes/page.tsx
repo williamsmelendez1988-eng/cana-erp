@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { colors, card, buttonPrimary, buttonSecondary, inputStyle } from '@/lib/theme';
+import { Map, Plus, Sprout, Ruler, Calendar, X } from 'lucide-react';
 
 type Lote = {
   id: string;
@@ -17,20 +19,10 @@ type Lote = {
   notas: string | null;
 };
 
-const ESTADO_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  activo: { label: 'Activo', color: '#4ADE80', bg: 'rgba(74,222,128,0.12)' },
-  en_cosecha: { label: 'En cosecha', color: '#E8C77E', bg: 'rgba(232,199,126,0.15)' },
-  inactivo: { label: 'Inactivo', color: '#94A3B8', bg: 'rgba(148,163,184,0.12)' },
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: '0.65rem 0.9rem',
-  borderRadius: '8px',
-  border: '1px solid rgba(216,203,176,0.25)',
-  backgroundColor: 'rgba(255,255,255,0.04)',
-  color: '#F3ECDD',
-  fontSize: '0.95rem',
-  fontFamily: 'inherit',
+const ESTADO_LABELS: Record<string, { label: string; color: string }> = {
+  activo: { label: 'Activo', color: colors.success },
+  en_cosecha: { label: 'En cosecha', color: colors.gold },
+  inactivo: { label: 'Inactivo', color: colors.muted },
 };
 
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
@@ -42,10 +34,10 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function labelCiclo(lote: Lote): string | null {
-  if (!lote.tipo_ciclo) return null;
-  if (lote.tipo_ciclo === 'planta') return 'Caña planta';
-  return `Soca ${lote.numero_soca ?? '?'}`;
+function labelCiclo(t: Lote): string {
+  if (!t.tipo_ciclo) return '';
+  if (t.tipo_ciclo === 'planta') return 'Caña planta';
+  return `Soca ${t.numero_soca ?? '?'}`;
 }
 
 export default function LotesPage() {
@@ -145,68 +137,77 @@ export default function LotesPage() {
 
   return (
     <div>
+      <style>{`
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        .tablon-card {
+          animation: fadeSlideUp 0.5s cubic-bezier(.16,1,.3,1) both;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .tablon-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.28); border-color: rgba(232,199,126,0.3); }
+        .tablon-card:active { transform: scale(0.98); }
+        .btn-primary { transition: transform 0.15s, box-shadow 0.15s; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(201,151,76,0.35); }
+        .btn-primary:active { transform: scale(0.97); }
+      `}</style>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ color: '#F3ECDD', fontSize: '1.75rem', margin: 0 }}>Tablones</h1>
-          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Los tablones de la hacienda, uno por parcela.</p>
+          <h1 style={{ color: colors.cream, fontSize: '1.75rem', margin: 0 }}>Tablones</h1>
+          <p style={{ color: colors.muted, marginTop: '0.25rem' }}>Los tablones de la hacienda, uno por parcela.</p>
         </div>
-        <button
-          onClick={abrirNuevo}
-          style={{
-            padding: '0.7rem 1.4rem',
-            borderRadius: '10px',
-            border: 'none',
-            background: 'linear-gradient(135deg, #E8C77E 0%, #C9974C 100%)',
-            color: '#1F3326',
-            fontWeight: 700,
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-          }}
-        >
-          + Nuevo tablón
+        <button onClick={abrirNuevo} className="btn-primary" style={{ ...buttonPrimary, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Plus size={16} /> Nuevo tablón
         </button>
       </div>
 
       {loading ? (
-        <p style={{ color: '#94a3b8' }}>Cargando tablones...</p>
+        <p style={{ color: colors.muted }}>Cargando tablones...</p>
       ) : lotes.length === 0 ? (
-        <div style={{ backgroundColor: '#1F3326', border: '1px dashed rgba(232,199,126,0.3)', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+        <div style={{ ...card, border: `1px dashed ${colors.borderStrong}`, padding: '3rem', textAlign: 'center' }}>
+          <Map size={28} color={colors.gold} style={{ marginBottom: '0.75rem' }} />
           <p style={{ color: '#D8CBB0', marginBottom: '1rem' }}>Todavía no has registrado ningún tablón.</p>
-          <button
-            onClick={abrirNuevo}
-            style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid #E8C77E', backgroundColor: 'transparent', color: '#E8C77E', cursor: 'pointer', fontWeight: 600 }}
-          >
-            Registrar el primero
+          <button onClick={abrirNuevo} className="btn-primary" style={{ ...buttonPrimary, margin: '0 auto', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Plus size={16} /> Registrar el primero
           </button>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
-          {lotes.map((lote) => {
+          {lotes.map((lote, i) => {
             const estadoInfo = ESTADO_LABELS[lote.estado];
             const ciclo = labelCiclo(lote);
             return (
               <div
                 key={lote.id}
+                className="tablon-card"
                 onClick={() => abrirEditar(lote)}
-                style={{
-                  backgroundColor: '#1F3326',
-                  border: '1px solid rgba(232,199,126,0.15)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  cursor: 'pointer',
-                }}
+                style={{ ...card, cursor: 'pointer', position: 'relative', overflow: 'hidden', animationDelay: `${Math.min(i * 0.05, 0.4)}s` }}
               >
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: `linear-gradient(90deg, ${estadoInfo.color}, transparent)` }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                  <h3 style={{ color: '#F3ECDD', fontSize: '1.1rem', margin: 0 }}>{lote.nombre}</h3>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px', color: estadoInfo.color, backgroundColor: estadoInfo.bg }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '9px', backgroundColor: `${estadoInfo.color}20`, color: estadoInfo.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Map size={16} />
+                  </div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px', color: estadoInfo.color, backgroundColor: `${estadoInfo.color}20` }}>
                     {estadoInfo.label}
                   </span>
                 </div>
-                {lote.variedad && <p style={{ color: '#E8C77E', fontSize: '0.85rem', margin: '0.2rem 0', fontWeight: 600 }}>{lote.variedad}</p>}
-                {ciclo && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>{ciclo}</p>}
-                {lote.codigo && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>Código: {lote.codigo}</p>}
-                {lote.area_hectareas != null && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>{lote.area_hectareas} hectáreas</p>}
-                {lote.fecha_ultimo_corte && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>Último corte: {lote.fecha_ultimo_corte}</p>}
+                <h3 style={{ color: colors.cream, fontSize: '1.1rem', margin: '0 0 0.5rem' }}>{lote.nombre}</h3>
+                {lote.variedad && (
+                  <p style={{ color: colors.gold, fontSize: '0.85rem', margin: '0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
+                    <Sprout size={13} /> {lote.variedad}
+                  </p>
+                )}
+                {ciclo && <p style={{ color: colors.muted, fontSize: '0.85rem', margin: '0.25rem 0' }}>{ciclo}</p>}
+                {lote.area_hectareas != null && (
+                  <p style={{ color: colors.muted, fontSize: '0.85rem', margin: '0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Ruler size={13} /> {lote.area_hectareas} hectáreas
+                  </p>
+                )}
+                {lote.fecha_ultimo_corte && (
+                  <p style={{ color: colors.muted, fontSize: '0.85rem', margin: '0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Calendar size={13} /> Último corte: {lote.fecha_ultimo_corte}
+                  </p>
+                )}
               </div>
             );
           })}
@@ -216,26 +217,19 @@ export default function LotesPage() {
       {modalOpen && (
         <div
           onClick={() => setModalOpen(false)}
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50 }}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50 }}
         >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleGuardar}
-            style={{
-              backgroundColor: '#1F3326',
-              border: '1px solid rgba(232,199,126,0.2)',
-              borderRadius: '16px',
-              padding: '2rem',
-              width: '100%',
-              maxWidth: '420px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-            }}
+            style={{ ...card, width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '90vh', overflowY: 'auto' }}
           >
-            <h2 style={{ color: '#F3ECDD', fontSize: '1.3rem', margin: 0 }}>{editing ? 'Editar tablón' : 'Nuevo tablón'}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ color: colors.cream, fontSize: '1.3rem', margin: 0 }}>{editing ? 'Editar tablón' : 'Nuevo tablón'}</h2>
+              <button type="button" onClick={() => setModalOpen(false)} style={{ background: 'none', border: 'none', color: colors.muted, cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
 
             <Campo label="Nombre">
               <input required value={nombre} onChange={(e) => setNombre(e.target.value)} style={inputStyle} />
@@ -258,15 +252,7 @@ export default function LotesPage() {
 
             {tipoCiclo === 'soca' && (
               <Campo label="Número de soca">
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={numeroSoca}
-                  onChange={(e) => setNumeroSoca(e.target.value)}
-                  placeholder="Ej: 1, 2, 7, 14..."
-                  style={inputStyle}
-                />
+                <input type="number" min="1" step="1" value={numeroSoca} onChange={(e) => setNumeroSoca(e.target.value)} placeholder="Ej: 1, 2, 7, 14..." style={inputStyle} />
               </Campo>
             )}
 
@@ -294,31 +280,13 @@ export default function LotesPage() {
               <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
             </Campo>
 
-            {error && <p style={{ color: '#F5A3A3', fontSize: '0.85rem', margin: 0 }}>{error}</p>}
+            {error && <p style={{ color: colors.danger, fontSize: '0.85rem', margin: 0 }}>{error}</p>}
 
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                style={{ flex: 1, padding: '0.7rem', borderRadius: '10px', border: '1px solid rgba(216,203,176,0.25)', backgroundColor: 'transparent', color: '#D8CBB0', cursor: 'pointer' }}
-              >
+              <button type="button" onClick={() => setModalOpen(false)} style={{ ...buttonSecondary, flex: 1 }}>
                 Cancelar
               </button>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  padding: '0.7rem',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #E8C77E 0%, #C9974C 100%)',
-                  color: '#1F3326',
-                  fontWeight: 700,
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                  opacity: saving ? 0.7 : 1,
-                }}
-              >
+              <button type="submit" disabled={saving} className="btn-primary" style={{ ...buttonPrimary, flex: 1, opacity: saving ? 0.7 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
