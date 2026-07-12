@@ -9,6 +9,7 @@ type LoteSimple = {
   variedad: string | null;
   tipo_ciclo: string | null;
   numero_soca: number | null;
+  area_hectareas: number | null;
 };
 
 type Labor = {
@@ -18,6 +19,7 @@ type Labor = {
   fecha: string;
   responsable: string | null;
   notas: string | null;
+  toneladas: number | null;
 };
 
 const TIPO_INFO: Record<string, { label: string; color: string; bg: string; placeholder: string }> = {
@@ -79,6 +81,7 @@ export default function LaboresPage() {
   const [fecha, setFecha] = useState(hoy());
   const [responsable, setResponsable] = useState('');
   const [notas, setNotas] = useState('');
+  const [toneladas, setToneladas] = useState('');
 
   useEffect(() => {
     cargarTablones();
@@ -90,7 +93,7 @@ export default function LaboresPage() {
 
   async function cargarTablones() {
     setLoadingTablones(true);
-    const { data } = await supabase.from('lotes').select('id, nombre, variedad, tipo_ciclo, numero_soca').order('nombre');
+    const { data } = await supabase.from('lotes').select('id, nombre, variedad, tipo_ciclo, numero_soca, area_hectareas').order('nombre');
     const lista = (data as LoteSimple[]) ?? [];
     setTablones(lista);
     if (lista.length > 0 && !tablonId) setTablonId(lista[0].id);
@@ -101,7 +104,7 @@ export default function LaboresPage() {
     setLoadingLabores(true);
     const { data } = await supabase
       .from('labores_tablon')
-      .select('id, tipo, subtipo, fecha, responsable, notas')
+      .select('id, tipo, subtipo, fecha, responsable, notas, toneladas')
       .eq('tablon_id', id)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false });
@@ -115,6 +118,7 @@ export default function LaboresPage() {
     setFecha(hoy());
     setResponsable('');
     setNotas('');
+    setToneladas('');
     setError('');
     setModalOpen(true);
   }
@@ -132,6 +136,7 @@ export default function LaboresPage() {
       fecha,
       responsable: responsable || null,
       notas: notas || null,
+      toneladas: tipo === 'corte' && toneladas ? parseFloat(toneladas) : null,
     });
 
     if (laborError) {
@@ -225,6 +230,7 @@ export default function LaboresPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               {labores.map((l) => {
                 const info = TIPO_INFO[l.tipo] ?? TIPO_INFO.otro;
+                const rendimiento = l.toneladas && tablonActual?.area_hectareas ? (l.toneladas / tablonActual.area_hectareas).toFixed(1) : null;
                 return (
                   <div
                     key={l.id}
@@ -243,6 +249,11 @@ export default function LaboresPage() {
                       <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{l.fecha}</span>
                     </div>
                     {l.subtipo && <p style={{ color: '#F3ECDD', fontSize: '0.9rem', margin: '0.5rem 0 0' }}>{l.subtipo}</p>}
+                    {l.toneladas != null && (
+                      <p style={{ color: '#E8C77E', fontSize: '0.85rem', margin: '0.3rem 0 0', fontWeight: 600 }}>
+                        {l.toneladas} toneladas{rendimiento && ` · ${rendimiento} ton/ha`}
+                      </p>
+                    )}
                     {l.responsable && <p style={{ color: '#94a3b8', fontSize: '0.8rem', margin: '0.2rem 0 0' }}>Responsable: {l.responsable}</p>}
                     {l.notas && <p style={{ color: '#94a3b8', fontSize: '0.78rem', margin: '0.2rem 0 0', fontStyle: 'italic' }}>{l.notas}</p>}
                   </div>
@@ -271,9 +282,22 @@ export default function LaboresPage() {
             </Campo>
 
             {tipo === 'corte' && (
-              <p style={{ color: '#E8C77E', fontSize: '0.8rem', margin: 0, backgroundColor: 'rgba(232,199,126,0.1)', padding: '0.6rem 0.8rem', borderRadius: '8px' }}>
-                Al guardar, este tablón va a pasar automáticamente a {tablonActual?.tipo_ciclo === 'planta' ? 'Soca 1' : `Soca ${(tablonActual?.numero_soca ?? 0) + 1}`}.
-              </p>
+              <>
+                <p style={{ color: '#E8C77E', fontSize: '0.8rem', margin: 0, backgroundColor: 'rgba(232,199,126,0.1)', padding: '0.6rem 0.8rem', borderRadius: '8px' }}>
+                  Al guardar, este tablón va a pasar automáticamente a {tablonActual?.tipo_ciclo === 'planta' ? 'Soca 1' : `Soca ${(tablonActual?.numero_soca ?? 0) + 1}`}.
+                </p>
+                <Campo label="Toneladas cosechadas">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={toneladas}
+                    onChange={(e) => setToneladas(e.target.value)}
+                    placeholder="Ej: 45.5"
+                    style={inputStyle}
+                  />
+                </Campo>
+              </>
             )}
 
             <Campo label="Detalle">
