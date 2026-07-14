@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getTasaBCV, TasaBCV } from '@/lib/bcv';
+import { colors, card, buttonPrimary, buttonSecondary, inputStyle } from '@/lib/theme';
+import { Users, Plus, Phone, Briefcase, IdCard, X } from 'lucide-react';
 
 type Trabajador = {
   id: string;
@@ -16,19 +18,9 @@ type Trabajador = {
   notas: string | null;
 };
 
-const ESTADO_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  activo: { label: 'Activo', color: '#4ADE80', bg: 'rgba(74,222,128,0.12)' },
-  inactivo: { label: 'Inactivo', color: '#94A3B8', bg: 'rgba(148,163,184,0.12)' },
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: '0.65rem 0.9rem',
-  borderRadius: '8px',
-  border: '1px solid rgba(216,203,176,0.25)',
-  backgroundColor: 'rgba(255,255,255,0.04)',
-  color: '#F3ECDD',
-  fontSize: '0.95rem',
-  fontFamily: 'inherit',
+const ESTADO_LABELS: Record<string, { label: string; color: string }> = {
+  activo: { label: 'Activo', color: colors.success },
+  inactivo: { label: 'Inactivo', color: colors.muted },
 };
 
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
@@ -150,84 +142,94 @@ export default function TrabajadoresPage() {
 
   return (
     <div>
+      <style>{`
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        .trab-card {
+          animation: fadeSlideUp 0.5s cubic-bezier(.16,1,.3,1) both;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .trab-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.28); border-color: rgba(232,199,126,0.3); }
+        .trab-card:active { transform: scale(0.98); }
+        .btn-primary { transition: transform 0.15s, box-shadow 0.15s; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(201,151,76,0.35); }
+        .btn-primary:active { transform: scale(0.97); }
+      `}</style>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ color: '#F3ECDD', fontSize: '1.75rem', margin: 0 }}>Trabajadores</h1>
-          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>El personal de la hacienda.</p>
+          <h1 style={{ color: colors.cream, fontSize: '1.75rem', margin: 0 }}>Trabajadores</h1>
+          <p style={{ color: colors.muted, marginTop: '0.25rem' }}>El personal de la hacienda.</p>
         </div>
-        <button
-          onClick={abrirNuevo}
-          style={{
-            padding: '0.7rem 1.4rem',
-            borderRadius: '10px',
-            border: 'none',
-            background: 'linear-gradient(135deg, #E8C77E 0%, #C9974C 100%)',
-            color: '#1F3326',
-            fontWeight: 700,
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-          }}
-        >
-          + Nuevo trabajador
+        <button onClick={abrirNuevo} className="btn-primary" style={{ ...buttonPrimary, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Plus size={16} /> Nuevo trabajador
         </button>
       </div>
 
       <div style={{ marginBottom: '1.5rem' }}>
         {tasaCargando ? (
-          <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Consultando tasa BCV...</span>
+          <span style={{ color: colors.muted, fontSize: '0.8rem' }}>Consultando tasa BCV...</span>
         ) : tasa ? (
-          <span style={{ color: '#E8C77E', fontSize: '0.8rem', fontWeight: 600 }}>
-            Tasa BCV hoy: Bs {formatBs(tasa.usd)} por $1 <span style={{ color: '#94a3b8', fontWeight: 400 }}>({tasa.fecha})</span>
+          <span style={{ color: colors.gold, fontSize: '0.8rem', fontWeight: 600 }}>
+            Tasa BCV hoy: Bs {formatBs(tasa.usd)} por $1 <span style={{ color: colors.muted, fontWeight: 400 }}>({tasa.fecha})</span>
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>No se pudo obtener la tasa BCV hoy — mostrando solo dólares.</span>
+          <span style={{ color: colors.muted, fontSize: '0.8rem' }}>No se pudo obtener la tasa BCV hoy — mostrando solo dólares.</span>
         )}
       </div>
 
       {loading ? (
-        <p style={{ color: '#94a3b8' }}>Cargando trabajadores...</p>
+        <p style={{ color: colors.muted }}>Cargando trabajadores...</p>
       ) : trabajadores.length === 0 ? (
-        <div style={{ backgroundColor: '#1F3326', border: '1px dashed rgba(232,199,126,0.3)', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+        <div style={{ ...card, border: `1px dashed ${colors.borderStrong}`, padding: '3rem', textAlign: 'center' }}>
+          <Users size={28} color={colors.gold} style={{ marginBottom: '0.75rem' }} />
           <p style={{ color: '#D8CBB0', marginBottom: '1rem' }}>Todavía no has registrado ningún trabajador.</p>
-          <button
-            onClick={abrirNuevo}
-            style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid #E8C77E', backgroundColor: 'transparent', color: '#E8C77E', cursor: 'pointer', fontWeight: 600 }}
-          >
-            Registrar el primero
+          <button onClick={abrirNuevo} className="btn-primary" style={{ ...buttonPrimary, margin: '0 auto', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Plus size={16} /> Registrar el primero
           </button>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
-          {trabajadores.map((t) => {
+          {trabajadores.map((t, i) => {
             const estadoInfo = ESTADO_LABELS[t.estado];
             const bs = t.salario_diario_usd != null ? usdABs(t.salario_diario_usd, tasa) : null;
             return (
               <div
                 key={t.id}
+                className="trab-card"
                 onClick={() => abrirEditar(t)}
-                style={{
-                  backgroundColor: '#1F3326',
-                  border: '1px solid rgba(232,199,126,0.15)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  cursor: 'pointer',
-                }}
+                style={{ ...card, cursor: 'pointer', position: 'relative', overflow: 'hidden', animationDelay: `${Math.min(i * 0.05, 0.4)}s` }}
               >
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: `linear-gradient(90deg, ${estadoInfo.color}, transparent)` }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                  <h3 style={{ color: '#F3ECDD', fontSize: '1.1rem', margin: 0 }}>{t.nombre_completo}</h3>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px', color: estadoInfo.color, backgroundColor: estadoInfo.bg }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '9px', backgroundColor: `${estadoInfo.color}20`, color: estadoInfo.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Users size={16} />
+                  </div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px', color: estadoInfo.color, backgroundColor: `${estadoInfo.color}20` }}>
                     {estadoInfo.label}
                   </span>
                 </div>
-                {t.cargo && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>{t.cargo}</p>}
-                {t.cedula && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>Cédula: {t.cedula}</p>}
-                {t.salario_diario_usd != null && (
-                  <p style={{ margin: '0.2rem 0' }}>
-                    <span style={{ color: '#E8C77E', fontWeight: 700 }}>${t.salario_diario_usd.toFixed(2)} / día</span>
-                    {bs && <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}> · ≈ Bs {bs}</span>}
+                <h3 style={{ color: colors.cream, fontSize: '1.1rem', margin: '0 0 0.5rem' }}>{t.nombre_completo}</h3>
+                {t.cargo && (
+                  <p style={{ color: colors.muted, fontSize: '0.85rem', margin: '0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Briefcase size={13} /> {t.cargo}
                   </p>
                 )}
-                {t.telefono && <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '0.2rem 0' }}>{t.telefono}</p>}
+                {t.cedula && (
+                  <p style={{ color: colors.muted, fontSize: '0.85rem', margin: '0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <IdCard size={13} /> {t.cedula}
+                  </p>
+                )}
+                {t.salario_diario_usd != null && (
+                  <p style={{ margin: '0.4rem 0 0.25rem' }}>
+                    <span style={{ color: colors.gold, fontWeight: 700 }}>${t.salario_diario_usd.toFixed(2)} / día</span>
+                    {bs && <span style={{ color: colors.muted, fontSize: '0.85rem' }}> · ≈ Bs {bs}</span>}
+                  </p>
+                )}
+                {t.telefono && (
+                  <p style={{ color: colors.muted, fontSize: '0.85rem', margin: '0.25rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Phone size={13} /> {t.telefono}
+                  </p>
+                )}
               </div>
             );
           })}
@@ -237,26 +239,19 @@ export default function TrabajadoresPage() {
       {modalOpen && (
         <div
           onClick={() => setModalOpen(false)}
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50 }}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 50 }}
         >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleGuardar}
-            style={{
-              backgroundColor: '#1F3326',
-              border: '1px solid rgba(232,199,126,0.2)',
-              borderRadius: '16px',
-              padding: '2rem',
-              width: '100%',
-              maxWidth: '420px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-            }}
+            style={{ ...card, width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '90vh', overflowY: 'auto' }}
           >
-            <h2 style={{ color: '#F3ECDD', fontSize: '1.3rem', margin: 0 }}>{editing ? 'Editar trabajador' : 'Nuevo trabajador'}</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ color: colors.cream, fontSize: '1.3rem', margin: 0 }}>{editing ? 'Editar trabajador' : 'Nuevo trabajador'}</h2>
+              <button type="button" onClick={() => setModalOpen(false)} style={{ background: 'none', border: 'none', color: colors.muted, cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
 
             <Campo label="Nombre completo">
               <input required value={nombreCompleto} onChange={(e) => setNombreCompleto(e.target.value)} style={inputStyle} />
@@ -272,9 +267,7 @@ export default function TrabajadoresPage() {
 
             <Campo label="Salario diario ($)">
               <input type="number" step="0.01" min="0" value={salarioDiarioUsd} onChange={(e) => setSalarioDiarioUsd(e.target.value)} style={inputStyle} />
-              {previewBs && (
-                <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>≈ Bs {previewBs} a la tasa de hoy</span>
-              )}
+              {previewBs && <span style={{ color: colors.muted, fontSize: '0.8rem' }}>≈ Bs {previewBs} a la tasa de hoy</span>}
             </Campo>
 
             <Campo label="Teléfono">
@@ -296,31 +289,13 @@ export default function TrabajadoresPage() {
               <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
             </Campo>
 
-            {error && <p style={{ color: '#F5A3A3', fontSize: '0.85rem', margin: 0 }}>{error}</p>}
+            {error && <p style={{ color: colors.danger, fontSize: '0.85rem', margin: 0 }}>{error}</p>}
 
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                style={{ flex: 1, padding: '0.7rem', borderRadius: '10px', border: '1px solid rgba(216,203,176,0.25)', backgroundColor: 'transparent', color: '#D8CBB0', cursor: 'pointer' }}
-              >
+              <button type="button" onClick={() => setModalOpen(false)} style={{ ...buttonSecondary, flex: 1 }}>
                 Cancelar
               </button>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  padding: '0.7rem',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #E8C77E 0%, #C9974C 100%)',
-                  color: '#1F3326',
-                  fontWeight: 700,
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                  opacity: saving ? 0.7 : 1,
-                }}
-              >
+              <button type="submit" disabled={saving} className="btn-primary" style={{ ...buttonPrimary, flex: 1, opacity: saving ? 0.7 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
