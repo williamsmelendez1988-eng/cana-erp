@@ -14,6 +14,7 @@ type Tablon = {
 
 type AsistenciaConSalario = {
   trabajador_id: string;
+  lote_ids: string[] | null;
   trabajadores: { salario_diario_usd: number | null } | null;
 };
 
@@ -96,13 +97,20 @@ export default function ExpedientePage() {
     const [{ data: labores }, { data: gastos }, { data: asisRows }] = await Promise.all([
       supabase.from('labores_tablon').select('tipo, subtipo, fecha, toneladas, responsable, notas').eq('tablon_id', id),
       supabase.from('gastos').select('categoria, descripcion, monto_usd, fecha').eq('lote_id', id),
-      supabase.from('asistencia').select('trabajador_id, trabajadores(salario_diario_usd)').eq('lote_id', id).eq('tipo', 'normal'),
+      supabase.from('asistencia').select('trabajador_id, lote_ids, trabajadores(salario_diario_usd)').contains('lote_ids', [id]).eq('tipo', 'normal'),
     ]);
 
     const asistenciaTyped = (asisRows as unknown as AsistenciaConSalario[]) ?? [];
 
     const gastoTotal = (gastos ?? []).reduce((sum, g) => sum + (g.monto_usd ?? 0), 0);
-    const manoObraTotal = asistenciaTyped.reduce((sum, r) => sum + (r.trabajadores?.salario_diario_usd ?? 0), 0);
+
+    // El sueldo del día se reparte en partes iguales entre todos los tablones donde trabajó ese día
+    const manoObraTotal = asistenciaTyped.reduce((sum, r) => {
+      const cantidadTablones = r.lote_ids?.length || 1;
+      const salario = r.trabajadores?.salario_diario_usd ?? 0;
+      return sum + salario / cantidadTablones;
+    }, 0);
+
     const toneladasTotal = (labores ?? []).reduce((sum, l) => sum + (l.tipo === 'corte' ? (l.toneladas ?? 0) : 0), 0);
 
     setGastoDirecto(gastoTotal);
@@ -211,7 +219,7 @@ export default function ExpedientePage() {
               </div>
 
               <p style={{ color: '#94a3b8', fontSize: '0.78rem', marginBottom: '1.5rem' }}>
-                Costo total = gastos directos (${gastoDirecto.toFixed(2)}) + mano de obra según asistencia (${costoManoObra.toFixed(2)}). Todavía no incluye el valor de los insumos aplicados.
+                Costo total = gastos directos (${gastoDirecto.toFixed(2)}) + mano de obra según asistencia (${costoManoObra.toFixed(2)}). Si un trabajador estuvo en varios tablones el mismo día, su sueldo se reparte en partes iguales entre ellos. Todavía no incluye el valor de los insumos aplicados.
               </p>
 
               <h2 style={{ color: '#F3ECDD', fontSize: '1.2rem', marginBottom: '1rem' }}>Línea de tiempo</h2>
