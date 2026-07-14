@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ChevronDown } from 'lucide-react';
 
 type TrabajadorSimple = { id: string; nombre_completo: string };
 type LoteSimple = { id: string; nombre: string };
@@ -9,7 +10,7 @@ type TipoAsistencia = 'normal' | 'falta' | 'permiso' | 'incapacidad';
 
 type RegistroDia = {
   tipo: TipoAsistencia;
-  lote_id: string;
+  lote_ids: string[];
   horas_extra: string;
   notas: string;
 };
@@ -23,6 +24,84 @@ const TIPO_OPCIONES: { valor: TipoAsistencia; label: string; color: string; bg: 
 
 function hoy() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function SelectorTablones({
+  lotes,
+  seleccionados,
+  onChange,
+}: {
+  lotes: LoteSimple[];
+  seleccionados: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  function toggle(id: string) {
+    if (seleccionados.includes(id)) onChange(seleccionados.filter((x) => x !== id));
+    else onChange([...seleccionados, id]);
+  }
+
+  const nombres = lotes.filter((l) => seleccionados.includes(l.id)).map((l) => l.nombre);
+  const texto = nombres.length === 0 ? 'Sin tablón asignado' : nombres.length <= 2 ? nombres.join(', ') : `${nombres.length} tablones`;
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '0.4rem',
+          padding: '0.5rem 0.7rem',
+          borderRadius: '8px',
+          border: '1px solid rgba(216,203,176,0.25)',
+          backgroundColor: 'rgba(255,255,255,0.04)',
+          color: '#F3ECDD',
+          fontSize: '0.85rem',
+          cursor: 'pointer',
+          maxWidth: '220px',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {texto} <ChevronDown size={14} style={{ flexShrink: 0 }} />
+      </button>
+
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+          <div
+            style={{
+              position: 'absolute', top: '110%', left: 0, zIndex: 41,
+              backgroundColor: '#243B2C',
+              border: '1px solid rgba(232,199,126,0.25)',
+              borderRadius: '10px',
+              padding: '0.4rem',
+              minWidth: '220px',
+              maxHeight: '240px',
+              overflowY: 'auto',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+            }}
+          >
+            {lotes.length === 0 ? (
+              <p style={{ color: '#94a3b8', fontSize: '0.8rem', padding: '0.4rem' }}>No hay tablones registrados.</p>
+            ) : (
+              lotes.map((l) => (
+                <label
+                  key={l.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.5rem', cursor: 'pointer', borderRadius: '6px' }}
+                >
+                  <input type="checkbox" checked={seleccionados.includes(l.id)} onChange={() => toggle(l.id)} />
+                  <span style={{ fontSize: '0.85rem', color: '#F3ECDD' }}>{l.nombre}</span>
+                </label>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export default function AsistenciaPage() {
@@ -62,11 +141,11 @@ export default function AsistenciaPage() {
       base[t.id] = existente
         ? {
             tipo: existente.tipo,
-            lote_id: existente.lote_id ?? '',
+            lote_ids: existente.lote_ids ?? [],
             horas_extra: existente.horas_extra?.toString() ?? '0',
             notas: existente.notas ?? '',
           }
-        : { tipo: 'normal', lote_id: '', horas_extra: '0', notas: '' };
+        : { tipo: 'normal', lote_ids: [], horas_extra: '0', notas: '' };
     });
     setRegistros(base);
     setLoading(false);
@@ -86,7 +165,7 @@ export default function AsistenciaPage() {
       return {
         trabajador_id: t.id,
         fecha,
-        lote_id: r.lote_id || null,
+        lote_ids: r.lote_ids,
         tipo: r.tipo,
         horas_extra: r.horas_extra ? parseFloat(r.horas_extra) : 0,
         notas: r.notas || null,
@@ -116,7 +195,7 @@ export default function AsistenciaPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ color: '#F3ECDD', fontSize: '1.75rem', margin: 0 }}>Asistencia</h1>
-          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Marca quién trabajó hoy y en qué tablón.</p>
+          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Marca quién trabajó hoy y en qué tablón — puedes elegir varios.</p>
         </div>
         <input
           type="date"
@@ -187,23 +266,7 @@ export default function AsistenciaPage() {
                     ))}
                   </div>
 
-                  <select
-                    value={r.lote_id}
-                    onChange={(e) => actualizarRegistro(t.id, { lote_id: e.target.value })}
-                    style={{
-                      padding: '0.5rem 0.7rem',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(216,203,176,0.25)',
-                      backgroundColor: 'rgba(255,255,255,0.04)',
-                      color: '#F3ECDD',
-                      fontSize: '0.85rem',
-                    }}
-                  >
-                    <option value="">Otro trabajo (sin tablón)</option>
-                    {lotes.map((l) => (
-                      <option key={l.id} value={l.id}>{l.nombre}</option>
-                    ))}
-                  </select>
+                  <SelectorTablones lotes={lotes} seleccionados={r.lote_ids} onChange={(ids) => actualizarRegistro(t.id, { lote_ids: ids })} />
 
                   {r.tipo === 'normal' && (
                     <input
@@ -227,7 +290,7 @@ export default function AsistenciaPage() {
                   )}
                 </div>
 
-                {r.lote_id === '' && r.tipo === 'normal' && (
+                {r.lote_ids.length === 0 && r.tipo === 'normal' && (
                   <input
                     type="text"
                     value={r.notas}
