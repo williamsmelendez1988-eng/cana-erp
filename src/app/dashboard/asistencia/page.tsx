@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ChevronDown } from 'lucide-react';
+import { colors, card, buttonPrimary, inputStyle } from '@/lib/theme';
+import { ChevronDown, CalendarDays, Users } from 'lucide-react';
 
 type TrabajadorSimple = { id: string; nombre_completo: string };
 type LoteSimple = { id: string; nombre: string };
@@ -15,11 +16,11 @@ type RegistroDia = {
   notas: string;
 };
 
-const TIPO_OPCIONES: { valor: TipoAsistencia; label: string; color: string; bg: string }[] = [
-  { valor: 'normal', label: 'Presente', color: '#4ADE80', bg: 'rgba(74,222,128,0.15)' },
-  { valor: 'falta', label: 'Falta', color: '#F87171', bg: 'rgba(248,113,113,0.15)' },
-  { valor: 'permiso', label: 'Permiso', color: '#E8C77E', bg: 'rgba(232,199,126,0.15)' },
-  { valor: 'incapacidad', label: 'Incapacidad', color: '#93C5FD', bg: 'rgba(147,197,253,0.15)' },
+const TIPO_OPCIONES: { valor: TipoAsistencia; label: string; color: string }[] = [
+  { valor: 'normal', label: 'Presente', color: colors.success },
+  { valor: 'falta', label: 'Falta', color: colors.danger },
+  { valor: 'permiso', label: 'Permiso', color: colors.gold },
+  { valor: 'incapacidad', label: 'Incapacidad', color: colors.info },
 ];
 
 function hoy() {
@@ -54,9 +55,9 @@ function SelectorTablones({
           display: 'flex', alignItems: 'center', gap: '0.4rem',
           padding: '0.5rem 0.7rem',
           borderRadius: '8px',
-          border: '1px solid rgba(216,203,176,0.25)',
+          border: `1px solid ${colors.border}`,
           backgroundColor: 'rgba(255,255,255,0.04)',
-          color: '#F3ECDD',
+          color: colors.cream,
           fontSize: '0.85rem',
           cursor: 'pointer',
           maxWidth: '220px',
@@ -74,8 +75,8 @@ function SelectorTablones({
           <div
             style={{
               position: 'absolute', top: '110%', left: 0, zIndex: 41,
-              backgroundColor: '#243B2C',
-              border: '1px solid rgba(232,199,126,0.25)',
+              backgroundColor: colors.bgPanelHover,
+              border: `1px solid ${colors.borderStrong}`,
               borderRadius: '10px',
               padding: '0.4rem',
               minWidth: '220px',
@@ -85,15 +86,12 @@ function SelectorTablones({
             }}
           >
             {lotes.length === 0 ? (
-              <p style={{ color: '#94a3b8', fontSize: '0.8rem', padding: '0.4rem' }}>No hay tablones registrados.</p>
+              <p style={{ color: colors.muted, fontSize: '0.8rem', padding: '0.4rem' }}>No hay tablones registrados.</p>
             ) : (
               lotes.map((l) => (
-                <label
-                  key={l.id}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.5rem', cursor: 'pointer', borderRadius: '6px' }}
-                >
+                <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.5rem', cursor: 'pointer', borderRadius: '6px' }}>
                   <input type="checkbox" checked={seleccionados.includes(l.id)} onChange={() => toggle(l.id)} />
-                  <span style={{ fontSize: '0.85rem', color: '#F3ECDD' }}>{l.nombre}</span>
+                  <span style={{ fontSize: '0.85rem', color: colors.cream }}>{l.nombre}</span>
                 </label>
               ))
             )}
@@ -192,30 +190,34 @@ export default function AsistenciaPage() {
 
   return (
     <div>
+      <style>{`
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .asis-row { animation: fadeSlideUp 0.4s cubic-bezier(.16,1,.3,1) both; }
+        .btn-primary { transition: transform 0.15s, box-shadow 0.15s; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(201,151,76,0.35); }
+        .btn-primary:active { transform: scale(0.97); }
+      `}</style>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ color: '#F3ECDD', fontSize: '1.75rem', margin: 0 }}>Asistencia</h1>
-          <p style={{ color: '#94a3b8', marginTop: '0.25rem' }}>Marca quién trabajó hoy y en qué tablón — puedes elegir varios.</p>
+          <h1 style={{ color: colors.cream, fontSize: '1.75rem', margin: 0 }}>Asistencia</h1>
+          <p style={{ color: colors.muted, marginTop: '0.25rem' }}>Marca quién trabajó hoy y en qué tablón — puedes elegir varios.</p>
         </div>
-        <input
-          type="date"
-          value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
-          style={{
-            padding: '0.6rem 0.9rem',
-            borderRadius: '10px',
-            border: '1px solid rgba(216,203,176,0.25)',
-            backgroundColor: 'rgba(255,255,255,0.04)',
-            color: '#F3ECDD',
-            fontSize: '0.95rem',
-          }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', ...inputStyle, padding: '0.5rem 0.7rem' }}>
+          <CalendarDays size={16} color={colors.gold} />
+          <input
+            type="date"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+            style={{ background: 'none', border: 'none', color: colors.cream, fontSize: '0.95rem', outline: 'none' }}
+          />
+        </div>
       </div>
 
       {!loading && trabajadores.length > 0 && (
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           {conteo.map((c) => (
-            <span key={c.valor} style={{ color: c.color, backgroundColor: c.bg, padding: '0.3rem 0.8rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 600 }}>
+            <span key={c.valor} style={{ color: c.color, backgroundColor: `${c.color}20`, padding: '0.3rem 0.8rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 600 }}>
               {c.total} {c.label}
             </span>
           ))}
@@ -223,26 +225,29 @@ export default function AsistenciaPage() {
       )}
 
       {loading ? (
-        <p style={{ color: '#94a3b8' }}>Cargando...</p>
+        <p style={{ color: colors.muted }}>Cargando...</p>
       ) : trabajadores.length === 0 ? (
-        <div style={{ backgroundColor: '#1F3326', border: '1px dashed rgba(232,199,126,0.3)', borderRadius: '12px', padding: '3rem', textAlign: 'center' }}>
+        <div style={{ ...card, border: `1px dashed ${colors.borderStrong}`, padding: '3rem', textAlign: 'center' }}>
+          <Users size={28} color={colors.gold} style={{ marginBottom: '0.75rem' }} />
           <p style={{ color: '#D8CBB0' }}>Todavía no tienes trabajadores activos registrados.</p>
         </div>
       ) : (
-        <div style={{ backgroundColor: '#1F3326', border: '1px solid rgba(232,199,126,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+        <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
           {trabajadores.map((t, i) => {
             const r = registros[t.id];
             if (!r) return null;
             return (
               <div
                 key={t.id}
+                className="asis-row"
                 style={{
                   padding: '1rem 1.25rem',
-                  borderBottom: i < trabajadores.length - 1 ? '1px solid rgba(232,199,126,0.08)' : 'none',
+                  borderBottom: i < trabajadores.length - 1 ? `1px solid ${colors.border}` : 'none',
+                  animationDelay: `${Math.min(i * 0.03, 0.3)}s`,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                  <div style={{ color: '#F3ECDD', fontWeight: 600, minWidth: '160px', flex: '1 1 160px' }}>{t.nombre_completo}</div>
+                  <div style={{ color: colors.cream, fontWeight: 600, minWidth: '160px', flex: '1 1 160px' }}>{t.nombre_completo}</div>
 
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                     {TIPO_OPCIONES.map((op) => (
@@ -253,12 +258,13 @@ export default function AsistenciaPage() {
                         style={{
                           padding: '0.4rem 0.8rem',
                           borderRadius: '999px',
-                          border: r.tipo === op.valor ? `1px solid ${op.color}` : '1px solid rgba(216,203,176,0.2)',
-                          backgroundColor: r.tipo === op.valor ? op.bg : 'transparent',
-                          color: r.tipo === op.valor ? op.color : '#94a3b8',
+                          border: r.tipo === op.valor ? `1px solid ${op.color}` : `1px solid ${colors.border}`,
+                          backgroundColor: r.tipo === op.valor ? `${op.color}20` : 'transparent',
+                          color: r.tipo === op.valor ? op.color : colors.muted,
                           fontSize: '0.8rem',
                           fontWeight: 600,
                           cursor: 'pointer',
+                          transition: 'all 0.15s ease',
                         }}
                       >
                         {op.label}
@@ -277,15 +283,7 @@ export default function AsistenciaPage() {
                       onChange={(e) => actualizarRegistro(t.id, { horas_extra: e.target.value })}
                       placeholder="Horas extra"
                       title="Horas extra"
-                      style={{
-                        width: '110px',
-                        padding: '0.5rem 0.7rem',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(216,203,176,0.25)',
-                        backgroundColor: 'rgba(255,255,255,0.04)',
-                        color: '#F3ECDD',
-                        fontSize: '0.85rem',
-                      }}
+                      style={{ ...inputStyle, width: '110px', padding: '0.5rem 0.7rem', fontSize: '0.85rem' }}
                     />
                   )}
                 </div>
@@ -296,16 +294,7 @@ export default function AsistenciaPage() {
                     value={r.notas}
                     onChange={(e) => actualizarRegistro(t.id, { notas: e.target.value })}
                     placeholder="¿Qué hizo hoy? Ej: vigilancia nocturna, reparó el tractor..."
-                    style={{
-                      marginTop: '0.6rem',
-                      width: '100%',
-                      padding: '0.5rem 0.7rem',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(216,203,176,0.2)',
-                      backgroundColor: 'rgba(255,255,255,0.03)',
-                      color: '#D8CBB0',
-                      fontSize: '0.85rem',
-                    }}
+                    style={{ ...inputStyle, marginTop: '0.6rem', width: '100%', fontSize: '0.85rem', color: colors.muted }}
                   />
                 )}
               </div>
@@ -316,24 +305,11 @@ export default function AsistenciaPage() {
 
       {!loading && trabajadores.length > 0 && (
         <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={handleGuardarTodo}
-            disabled={saving}
-            style={{
-              padding: '0.8rem 1.8rem',
-              borderRadius: '10px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #E8C77E 0%, #C9974C 100%)',
-              color: '#1F3326',
-              fontWeight: 700,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.7 : 1,
-            }}
-          >
+          <button onClick={handleGuardarTodo} disabled={saving} className="btn-primary" style={{ ...buttonPrimary, opacity: saving ? 0.7 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>
             {saving ? 'Guardando...' : 'Guardar asistencia del día'}
           </button>
-          {mensaje && <span style={{ color: '#4ADE80', fontSize: '0.9rem' }}>{mensaje}</span>}
-          {error && <span style={{ color: '#F5A3A3', fontSize: '0.9rem' }}>{error}</span>}
+          {mensaje && <span style={{ color: colors.success, fontSize: '0.9rem' }}>{mensaje}</span>}
+          {error && <span style={{ color: colors.danger, fontSize: '0.9rem' }}>{error}</span>}
         </div>
       )}
     </div>
