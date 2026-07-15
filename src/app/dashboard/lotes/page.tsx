@@ -36,6 +36,8 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
 
 function labelCiclo(t: Lote): string {
   if (!t.tipo_ciclo) return '';
+  if (t.tipo_ciclo === 'preparacion') return 'En preparación';
+  if (t.tipo_ciclo === 'barbecho') return 'Barbecho';
   if (t.tipo_ciclo === 'planta') return 'Caña planta';
   return `Soca ${t.numero_soca ?? '?'}`;
 }
@@ -54,7 +56,7 @@ export default function LotesPage() {
   const [estado, setEstado] = useState<'activo' | 'en_cosecha' | 'inactivo'>('activo');
   const [fechaSiembra, setFechaSiembra] = useState('');
   const [variedad, setVariedad] = useState('');
-  const [tipoCiclo, setTipoCiclo] = useState<'planta' | 'soca'>('planta');
+  const [tipoCiclo, setTipoCiclo] = useState<'preparacion' | 'planta' | 'soca' | 'barbecho'>('planta');
   const [numeroSoca, setNumeroSoca] = useState('');
   const [fechaUltimoCorte, setFechaUltimoCorte] = useState('');
   const [notas, setNotas] = useState('');
@@ -94,7 +96,7 @@ export default function LotesPage() {
     setEstado(lote.estado);
     setFechaSiembra(lote.fecha_siembra ?? '');
     setVariedad(lote.variedad ?? '');
-    setTipoCiclo((lote.tipo_ciclo as 'planta' | 'soca') ?? 'planta');
+    setTipoCiclo((lote.tipo_ciclo as 'preparacion' | 'planta' | 'soca' | 'barbecho') ?? 'planta');
     setNumeroSoca(lote.numero_soca?.toString() ?? '');
     setFechaUltimoCorte(lote.fecha_ultimo_corte ?? '');
     setNotas(lote.notas ?? '');
@@ -244,9 +246,11 @@ export default function LotesPage() {
             </Campo>
 
             <Campo label="Ciclo">
-              <select value={tipoCiclo} onChange={(e) => setTipoCiclo(e.target.value as 'planta' | 'soca')} style={inputStyle}>
+              <select value={tipoCiclo} onChange={(e) => setTipoCiclo(e.target.value as typeof tipoCiclo)} style={inputStyle}>
+                <option value="preparacion">En preparación</option>
                 <option value="planta">Caña planta</option>
                 <option value="soca">Soca</option>
+                <option value="barbecho">Barbecho (abandonado)</option>
               </select>
             </Campo>
 

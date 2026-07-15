@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getTasaBCV, TasaBCV } from '@/lib/bcv';
 import { colors } from '@/lib/theme';
-import { Users, Receipt, Wallet, Package, Map, TriangleAlert, CheckCircle2, Droplets, Sprout, Scissors, Bug, Shovel, CircleDollarSign } from 'lucide-react';
+import { Users, Receipt, Wallet, Map, TriangleAlert, CheckCircle2, Droplets, Sprout, Scissors, Bug, Shovel, CircleDollarSign } from 'lucide-react';
 
 function hoy() {
   return new Date().toISOString().slice(0, 10);
@@ -84,8 +84,9 @@ type ResumenData = {
   nominaPendienteUsd: number;
   itemsStockBajo: { nombre: string; stock_actual: number; unidad_medida: string }[];
   lotesTotal: number;
-  lotesActivos: number;
-  lotesEnCosecha: number;
+  lotesEnProduccion: number;
+  lotesEnPreparacion: number;
+  lotesEnBarbecho: number;
 };
 
 export default function DashboardPage() {
@@ -151,7 +152,7 @@ export default function DashboardPage() {
       supabase.from('gastos').select('monto_usd').gte('fecha', primerDiaMes()),
       supabase.from('nomina').select('total_pagar').eq('estado', 'pendiente'),
       supabase.from('inventario_items').select('nombre, stock_actual, stock_minimo, unidad_medida'),
-      supabase.from('lotes').select('estado'),
+      supabase.from('lotes').select('estado, tipo_ciclo'),
     ]);
 
     const totalActivos = trabActivos?.length ?? 0;
@@ -170,8 +171,9 @@ export default function DashboardPage() {
       .map((i) => ({ nombre: i.nombre, stock_actual: i.stock_actual, unidad_medida: i.unidad_medida }));
 
     const lotesTotal = lotes?.length ?? 0;
-    const lotesActivos = lotes?.filter((l) => l.estado === 'activo').length ?? 0;
-    const lotesEnCosecha = lotes?.filter((l) => l.estado === 'en_cosecha').length ?? 0;
+    const lotesEnProduccion = lotes?.filter((l) => l.tipo_ciclo === 'planta' || l.tipo_ciclo === 'soca').length ?? 0;
+    const lotesEnPreparacion = lotes?.filter((l) => l.tipo_ciclo === 'preparacion').length ?? 0;
+    const lotesEnBarbecho = lotes?.filter((l) => l.tipo_ciclo === 'barbecho').length ?? 0;
 
     setData({
       trabajadoresActivos: totalActivos,
@@ -184,8 +186,9 @@ export default function DashboardPage() {
       nominaPendienteUsd,
       itemsStockBajo,
       lotesTotal,
-      lotesActivos,
-      lotesEnCosecha,
+      lotesEnProduccion,
+      lotesEnPreparacion,
+      lotesEnBarbecho,
     });
     setLoading(false);
   }
@@ -342,7 +345,9 @@ export default function DashboardPage() {
           <p style={labelStyle}>Tablones</p>
           <p className="stat-number" style={{ color: colors.cream, fontSize: '1.85rem', fontWeight: 700, margin: 0 }}>{Math.round(lotesAnim)}</p>
           <p style={{ color: colors.muted, fontSize: '0.82rem', marginTop: '0.45rem' }}>
-            {data.lotesActivos} activo(s){data.lotesEnCosecha > 0 && ` · ${data.lotesEnCosecha} en cosecha`}
+            {data.lotesEnProduccion} en producción
+            {data.lotesEnPreparacion > 0 && ` · ${data.lotesEnPreparacion} en preparación`}
+            {data.lotesEnBarbecho > 0 && ` · ${data.lotesEnBarbecho} en barbecho`}
           </p>
         </div>
       </div>
