@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { colors, card, buttonPrimary, buttonSecondary } from '@/lib/theme';
-import { MapPin, Footprints, Check, RotateCcw } from 'lucide-react';
+import { MapPin, Footprints, Check, RotateCcw, X } from 'lucide-react';
 
 type LoteSimple = { id: string; nombre: string; area_hectareas: number | null };
 type Punto = { lat: number; lng: number };
@@ -37,6 +37,19 @@ function calcularAreaHectareas(puntos: Punto[]): number {
     area -= coords[j].x * coords[i].y;
   }
   return Math.abs(area) / 2 / 10000;
+}
+
+function mensajeErrorGps(codigo: number): string {
+  if (codigo === 1) {
+    return 'Le negaste el permiso de ubicación a esta página. Revisa en Ajustes de tu teléfono → Privacidad → Localización, que el navegador tenga permiso. Si abriste este link desde WhatsApp, cópialo y pégalo directo en Safari o Chrome.';
+  }
+  if (codigo === 2) {
+    return 'El teléfono no pudo obtener tu ubicación ahora mismo. Sal a un espacio abierto, lejos de techos o árboles densos, e intenta de nuevo.';
+  }
+  if (codigo === 3) {
+    return 'Se tardó demasiado buscando señal GPS. Intenta de nuevo a cielo abierto.';
+  }
+  return 'No se pudo acceder a tu ubicación en este momento.';
 }
 
 export default function MedirTablonPage() {
@@ -87,12 +100,14 @@ export default function MedirTablonPage() {
     setDistanciaTotal(0);
     setAreaCalculada(null);
     setErrorGps('');
+    setPrecisionActual(null);
     setMidiendo(true);
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
         setPrecisionActual(accuracy);
+        setErrorGps('');
 
         if (accuracy > 25) return;
 
@@ -106,9 +121,15 @@ export default function MedirTablonPage() {
           return [...prev, nuevo];
         });
       },
-      () => setErrorGps('No se pudo acceder a tu ubicación. Revisa los permisos de GPS del navegador.'),
+      (err) => setErrorGps(mensajeErrorGps(err.code)),
       { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
     );
+  }
+
+  function cancelarMedicion() {
+    detenerWatch();
+    setMidiendo(false);
+    setErrorGps('');
   }
 
   function terminarYCalcular() {
@@ -181,7 +202,7 @@ export default function MedirTablonPage() {
               </select>
 
               <p style={{ color: colors.muted, fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-                Párate en cualquier punto del borde del tablón antes de iniciar. Camina despacio, pegado al límite real del terreno, hasta dar la vuelta completa.
+                Párate en cualquier punto del borde del tablón antes de iniciar. Camina despacio, pegado al límite real del terreno, hasta dar la vuelta completa. Asegúrate de haber abierto este link directo en Safari o Chrome, no dentro de WhatsApp.
               </p>
 
               {errorGps && <p style={{ color: colors.danger, fontSize: '0.85rem', marginBottom: '1rem' }}>{errorGps}</p>}
@@ -211,16 +232,41 @@ export default function MedirTablonPage() {
                 </div>
               </div>
 
-              <p style={{ color: colors.muted, fontSize: '0.78rem', marginBottom: '1.5rem' }}>
+              <p style={{ color: colors.muted, fontSize: '0.78rem', marginBottom: '1rem' }}>
                 {precisionActual != null ? `Precisión del GPS: ±${precisionActual.toFixed(0)}m` : 'Buscando señal GPS...'}
               </p>
 
-              <button
-                onClick={terminarYCalcular}
-                style={{ ...buttonPrimary, width: '100%', backgroundColor: colors.danger, background: 'none', border: `2px solid ${colors.danger}`, color: colors.danger }}
-              >
-                Terminar y calcular área
-              </button>
+              {errorGps && (
+                <p style={{ color: colors.danger, fontSize: '0.85rem', marginBottom: '1.25rem', backgroundColor: `${colors.danger}15`, padding: '0.7rem 0.9rem', borderRadius: '8px', textAlign: 'left' }}>
+                  {errorGps}
+                </p>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  onClick={cancelarMedicion}
+                  style={{ ...buttonSecondary, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                >
+                  <X size={16} /> Cancelar
+                </button>
+                <button
+                  onClick={terminarYCalcular}
+                  disabled={puntos.length < 3}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '10px',
+                    border: `2px solid ${colors.danger}`,
+                    backgroundColor: 'transparent',
+                    color: colors.danger,
+                    fontWeight: 700,
+                    cursor: puntos.length < 3 ? 'not-allowed' : 'pointer',
+                    opacity: puntos.length < 3 ? 0.5 : 1,
+                  }}
+                >
+                  Terminar y calcular
+                </button>
+              </div>
             </div>
           )}
 
