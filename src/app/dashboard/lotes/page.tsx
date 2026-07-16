@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { colors, card, buttonPrimary, buttonSecondary, inputStyle } from '@/lib/theme';
-import { Map, Plus, Sprout, Ruler, Calendar, X } from 'lucide-react';
+import { Map, Plus, Sprout, Ruler, Calendar, X, Footprints } from 'lucide-react';
 
 type Lote = {
   id: string;
@@ -43,6 +44,7 @@ function labelCiclo(t: Lote): string {
 }
 
 export default function LotesPage() {
+  const router = useRouter();
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -157,9 +159,14 @@ export default function LotesPage() {
           <h1 style={{ color: colors.cream, fontSize: '1.75rem', margin: 0 }}>Tablones</h1>
           <p style={{ color: colors.muted, marginTop: '0.25rem' }}>Los tablones de la hacienda, uno por parcela.</p>
         </div>
-        <button onClick={abrirNuevo} className="btn-primary" style={{ ...buttonPrimary, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <Plus size={16} /> Nuevo tablón
-        </button>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <button onClick={() => router.push('/dashboard/lotes/medir')} style={{ ...buttonSecondary, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Footprints size={16} /> Medir con GPS
+          </button>
+          <button onClick={abrirNuevo} className="btn-primary" style={{ ...buttonPrimary, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Plus size={16} /> Nuevo tablón
+          </button>
+        </div>
       </div>
 
       {loading ? (
