@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { colors, card, buttonPrimary, buttonSecondary } from '@/lib/theme';
-import { MapPin, Footprints, Check, RotateCcw, X } from 'lucide-react';
+import { MapPin, Footprints, Check, RotateCcw } from 'lucide-react';
 
 type LoteSimple = { id: string; nombre: string; area_hectareas: number | null };
 type Punto = { lat: number; lng: number };
@@ -69,11 +69,16 @@ export default function MedirTablonPage() {
   const [mensaje, setMensaje] = useState('');
 
   const watchIdRef = useRef<number | null>(null);
+  const puntosRef = useRef<Punto[]>([]);
 
   useEffect(() => {
     cargarTablones();
     return () => detenerWatch();
   }, []);
+
+  useEffect(() => {
+    puntosRef.current = puntos;
+  }, [puntos]);
 
   async function cargarTablones() {
     setLoadingTablones(true);
@@ -97,6 +102,7 @@ export default function MedirTablonPage() {
       return;
     }
     setPuntos([]);
+    puntosRef.current = [];
     setDistanciaTotal(0);
     setAreaCalculada(null);
     setErrorGps('');
@@ -127,6 +133,10 @@ export default function MedirTablonPage() {
   }
 
   function cancelarMedicion() {
+    if (puntosRef.current.length >= 3) {
+      const confirmar = window.confirm(`Llevas ${puntosRef.current.length} puntos caminados. Si cancelas, se pierden. ¿Seguro que quieres cancelar?`);
+      if (!confirmar) return;
+    }
     detenerWatch();
     setMidiendo(false);
     setErrorGps('');
@@ -135,15 +145,16 @@ export default function MedirTablonPage() {
   function terminarYCalcular() {
     detenerWatch();
     setMidiendo(false);
-    if (puntos.length < 3) {
+    if (puntosRef.current.length < 3) {
       setErrorGps('No se capturaron suficientes puntos. Intenta de nuevo caminando más despacio por el borde.');
       return;
     }
-    setAreaCalculada(calcularAreaHectareas(puntos));
+    setAreaCalculada(calcularAreaHectareas(puntosRef.current));
   }
 
   function reintentar() {
     setPuntos([]);
+    puntosRef.current = [];
     setDistanciaTotal(0);
     setAreaCalculada(null);
     setErrorGps('');
@@ -169,6 +180,8 @@ export default function MedirTablonPage() {
         .gps-pulse { animation: pulse 1.4s ease-in-out infinite; }
         .btn-primary { transition: transform 0.15s, box-shadow 0.15s; }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(201,151,76,0.35); }
+        .btn-primary:active { transform: scale(0.97); }
+        .link-cancelar { background: none; border: none; color: #94a3b8; font-size: 0.85rem; cursor: pointer; text-decoration: underline; padding: 0.5rem; }
       `}</style>
 
       <div style={{ marginBottom: '1.5rem' }}>
@@ -202,7 +215,7 @@ export default function MedirTablonPage() {
               </select>
 
               <p style={{ color: colors.muted, fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-                Párate en cualquier punto del borde del tablón antes de iniciar. Camina despacio, pegado al límite real del terreno, hasta dar la vuelta completa. Asegúrate de haber abierto este link directo en Safari o Chrome, no dentro de WhatsApp.
+                Párate en cualquier punto del borde del tablón antes de iniciar. Camina despacio, pegado al límite real del terreno, hasta dar la vuelta completa. Para probar, elige un espacio grande y abierto — un terreno chico como una casa da un número casi invisible en hectáreas.
               </p>
 
               {errorGps && <p style={{ color: colors.danger, fontSize: '0.85rem', marginBottom: '1rem' }}>{errorGps}</p>}
@@ -242,31 +255,26 @@ export default function MedirTablonPage() {
                 </p>
               )}
 
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button
-                  onClick={cancelarMedicion}
-                  style={{ ...buttonSecondary, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                >
-                  <X size={16} /> Cancelar
-                </button>
-                <button
-                  onClick={terminarYCalcular}
-                  disabled={puntos.length < 3}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '10px',
-                    border: `2px solid ${colors.danger}`,
-                    backgroundColor: 'transparent',
-                    color: colors.danger,
-                    fontWeight: 700,
-                    cursor: puntos.length < 3 ? 'not-allowed' : 'pointer',
-                    opacity: puntos.length < 3 ? 0.5 : 1,
-                  }}
-                >
-                  Terminar y calcular
-                </button>
-              </div>
+              <button
+                onClick={terminarYCalcular}
+                disabled={puntos.length < 3}
+                className="btn-primary"
+                style={{
+                  ...buttonPrimary,
+                  width: '100%',
+                  fontSize: '1.05rem',
+                  padding: '1rem',
+                  marginBottom: '1rem',
+                  opacity: puntos.length < 3 ? 0.5 : 1,
+                  cursor: puntos.length < 3 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                ✓ Terminar y calcular área
+              </button>
+
+              <button onClick={cancelarMedicion} className="link-cancelar">
+                Cancelar medición
+              </button>
             </div>
           )}
 
