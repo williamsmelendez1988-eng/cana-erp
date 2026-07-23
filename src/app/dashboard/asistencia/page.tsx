@@ -14,6 +14,7 @@ type RegistroDia = {
   lote_ids: string[];
   horas_extra: string;
   notas: string;
+  tipo_labor: string;
 };
 
 const TIPO_OPCIONES: { valor: TipoAsistencia; label: string; color: string }[] = [
@@ -22,6 +23,19 @@ const TIPO_OPCIONES: { valor: TipoAsistencia; label: string; color: string }[] =
   { valor: 'permiso', label: 'Permiso', color: colors.gold },
   { valor: 'incapacidad', label: 'Incapacidad', color: colors.info },
 ];
+
+const TIPO_LABOR_LABELS: Record<string, string> = {
+  riego: 'Riego',
+  fertilizacion: 'Fertilización',
+  control_maleza: 'Control de maleza',
+  control_biologico: 'Control biológico',
+  subsolado: 'Subsolado',
+  agoste: 'Agoste',
+  tamo: 'Saque de tamo',
+  corte: 'Corte / Cosecha',
+  resiembro: 'Resiembro',
+  otro: 'Otra labor',
+};
 
 function hoy() {
   return new Date().toISOString().slice(0, 10);
@@ -142,8 +156,9 @@ export default function AsistenciaPage() {
             lote_ids: existente.lote_ids ?? [],
             horas_extra: existente.horas_extra?.toString() ?? '0',
             notas: existente.notas ?? '',
+            tipo_labor: existente.tipo_labor ?? '',
           }
-        : { tipo: 'normal', lote_ids: [], horas_extra: '0', notas: '' };
+        : { tipo: 'normal', lote_ids: [], horas_extra: '0', notas: '', tipo_labor: '' };
     });
     setRegistros(base);
     setLoading(false);
@@ -167,6 +182,7 @@ export default function AsistenciaPage() {
         tipo: r.tipo,
         horas_extra: r.horas_extra ? parseFloat(r.horas_extra) : 0,
         notas: r.notas || null,
+        tipo_labor: r.lote_ids.length > 0 && r.tipo_labor ? r.tipo_labor : null,
       };
     });
 
@@ -201,7 +217,7 @@ export default function AsistenciaPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ color: colors.cream, fontSize: '1.75rem', margin: 0 }}>Asistencia</h1>
-          <p style={{ color: colors.muted, marginTop: '0.25rem' }}>Marca quién trabajó hoy y en qué tablón — puedes elegir varios.</p>
+          <p style={{ color: colors.muted, marginTop: '0.25rem' }}>Marca quién trabajó hoy, en qué tablón, y qué va a hacer allí.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', ...inputStyle, padding: '0.5rem 0.7rem' }}>
           <CalendarDays size={16} color={colors.gold} />
@@ -236,6 +252,7 @@ export default function AsistenciaPage() {
           {trabajadores.map((t, i) => {
             const r = registros[t.id];
             if (!r) return null;
+            const tieneTablon = r.lote_ids.length > 0;
             return (
               <div
                 key={t.id}
@@ -288,7 +305,22 @@ export default function AsistenciaPage() {
                   )}
                 </div>
 
-                {r.lote_ids.length === 0 && r.tipo === 'normal' && (
+                {r.tipo === 'normal' && tieneTablon && (
+                  <div style={{ marginTop: '0.6rem' }}>
+                    <select
+                      value={r.tipo_labor}
+                      onChange={(e) => actualizarRegistro(t.id, { tipo_labor: e.target.value })}
+                      style={{ ...inputStyle, width: '100%', fontSize: '0.85rem', color: r.tipo_labor ? colors.cream : colors.muted }}
+                    >
+                      <option value="">¿Qué va a hacer en ese tablón? (opcional)</option>
+                      {Object.entries(TIPO_LABOR_LABELS).map(([valor, label]) => (
+                        <option key={valor} value={valor}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {r.tipo === 'normal' && !tieneTablon && (
                   <input
                     type="text"
                     value={r.notas}
