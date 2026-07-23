@@ -186,17 +186,47 @@ export default function AsistenciaPage() {
       };
     });
 
-    const { error } = await supabase.from('asistencia').upsert(filas, { onConflict: 'trabajador_id,fecha' });
+    const { error: asisError } = await supabase.from('asistencia').upsert(filas, { onConflict: 'trabajador_id,fecha' });
 
-    setSaving(false);
-
-    if (error) {
-      setError(`Error al guardar: ${error.message}`);
+    if (asisError) {
+      setSaving(false);
+      setError(`Error al guardar: ${asisError.message}`);
       return;
     }
 
-    setMensaje('Asistencia guardada correctamente.');
-    setTimeout(() => setMensaje(''), 3000);
+    // Limpia las labores que se habían generado automáticamente ese día, y las vuelve a crear según lo que quedó marcado ahora
+    const idsTrabajadoresDelDia = trabajadores.map((t) => t.id);
+    await supabase.from('labores_tablon').delete().eq('fecha', fecha).in('trabajador_id', idsTrabajadoresDelDia);
+
+    const nuevasLabores: { tablon_id: string; tipo: string; subtipo: string; fecha: string; responsable: string; trabajador_id: string }[] = [];
+    trabajadores.forEach((t) => {
+      const r = registros[t.id];
+      if (r.tipo === 'normal' && r.tipo_labor && r.lote_ids.length > 0) {
+        r.lote_ids.forEach((loteId) => {
+          nuevasLabores.push({
+            tablon_id: loteId,
+            tipo: r.tipo_labor,
+            subtipo: 'Asignado desde Asistencia',
+            fecha,
+            responsable: t.nombre_completo,
+            trabajador_id: t.id,
+          });
+        });
+      }
+    });
+
+    if (nuevasLabores.length > 0) {
+      const { error: laborError } = await supabase.from('labores_tablon').insert(nuevasLabores);
+      if (laborError) {
+        setSaving(false);
+        setError(`Asistencia guardada, pero hubo un error registrando las labores: ${laborError.message}`);
+        return;
+      }
+    }
+
+    setSaving(false);
+    setMensaje('Asistencia guardada — ya se refleja en el historial de cada tablón.');
+    setTimeout(() => setMensaje(''), 3500);
   }
 
   const conteo = TIPO_OPCIONES.map((op) => ({
